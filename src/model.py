@@ -1,4 +1,5 @@
 
+import numpy as np
 
 from keras.layers import Input, Embedding, Dot, Flatten
 from keras.regularizers import *
@@ -25,13 +26,15 @@ class EmbedModel():
         self.u_embed = Embedding(self.n_users, 
                                 self.embed_size, 
                                 input_length = 1,
-                                embeddings_regularizer = l2(self.n_l2))(users)
+                                embeddings_regularizer = l2(self.n_l2),
+                                name='user_embed')(users)
 
         items = Input(shape=(1,), dtype='int64', name='item_input')
         self.i_embed = Embedding(self.n_items, 
                                 self.embed_size, 
                                 input_length = 1,
-                                embeddings_regularizer = l2(self.n_l2))(items)
+                                embeddings_regularizer = l2(self.n_l2),
+                                name='item_embed')(items)
 
         x = Dot(axes=2)([self.u_embed,self.i_embed])
         x = Flatten()(x)
@@ -39,13 +42,15 @@ class EmbedModel():
         self.model = Model([users, items], x)
         return self.model
     
- #   def compile(self, optimizer = 'Adam', loss='mse', **kwargs):
- #       self.model.compile(optimizer, loss)
+    def get_recommendation(self, user_id, item_idx_dic, top_n = 10):
+        user_embed_weight = self.model.get_layer(name='user_embed').get_weights()[0]
+        item_embed_weight = self.model.get_layer(name='item_embed').get_weights()[0]
+        item_scores = np.dot(user_embed_weight[user_id],item_embed_weight.T)
         
- #   def fit(self, x_data, y_data, batch_size, epochs, validation_split=0.2, verbose=2):
- #       return self.model.fit(x=x_data, 
- #                              y=y_data, 
-#                               batch_size=batch_size,
-#                               epochs=epochs, 
-#                               validation_split=validation_split, 
-#                               verbose=verbose)
+        top_scores_idx = np.argpartition(item_scores, -top_n)[-top_n:][::-1]
+        
+        rtn = {}
+        for item in top_scores_idx:
+            rtn[item_idx_dic[item]] = item_scores[item]
+    
+        return rtn
