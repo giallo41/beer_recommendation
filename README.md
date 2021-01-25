@@ -3,5 +3,15 @@
 
 ## Beer Recommendation Model 
 
-- Using Basic MF 
+- Datsets : 
+ https://www.kaggle.com/rdoume/beerreviews
+
+- Using Basic Matrix Factorization recommend the beer
+
+- model : 
+![MF model](img/model.png)
+
+
+- output : <br>
+     - user / item interaction matrix 
 
